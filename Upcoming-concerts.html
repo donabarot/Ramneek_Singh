@@ -66,14 +66,13 @@
 
   <section class="section page-section concerts-section">
     <div class="container">
-      <article class="concert-card">
-        <p class="eyebrow">Next performance</p>
-        <h2>North Carolina</h2>
-        <p class="concert-date">November 15, 2026</p>
-        <div class="ornament" aria-hidden="true"></div>
-        <p class="concert-description">For concert bookings, workshops, teaching inquiries, and collaboration proposals, please reach out by email.</p>
-        <a class="btn btn-outline" href="mailto:Email@RamneekSingh.com">Performance and teaching inquiries</a>
-      </article>
+      <div class="concert-list" data-upcoming-concerts aria-live="polite">
+        <p class="concert-status">Loading concert listings…</p>
+      </div>
+      <section class="past-concerts" data-past-concerts hidden>
+        <h2 class="concert-group-title">Past concerts</h2>
+        <div class="concert-list" data-past-concert-list></div>
+      </section>
     </div>
   </section>
 
@@ -94,6 +93,8 @@
   </div>
 </footer>
 
-<script src="js/main.js"></script>
+<script src="js/main.js?v=20261124-concerts"></script>
+<script src="js/concerts-config.js?v=20261124"></script>
+<script src="js/concerts.js?v=20261124"></script>
 </body>
 </html>
