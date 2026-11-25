@@ -30,19 +30,22 @@ This repository includes a GitHub Actions workflow for static deployment to GitH
 
 Concerts are published from a Google Sheet, so the client can add events without editing this site. Upcoming events appear on the home page and the Upcoming Concerts page. Once an event date is before today, the event automatically moves into Past concerts. To correct or remove an event, edit or delete its response row in the linked Sheet.
 
+Use the existing [concert submission form](https://docs.google.com/forms/d/1mwgDP3-0CxDy8liUXrJikU82GOoDLSnqlYCxjbCA1rw/edit) and [response spreadsheet](https://docs.google.com/spreadsheets/d/1qVYbsNhWUvPqR80EIDnxJD_Z7bY34Eb51MTDi0aHdcI/edit?resourcekey=&gid=27844519#gid=27844519).
+
 One-time setup:
 
-1. Create a Google Form owned by the site owner and add these questions with these exact titles:
+1. In the existing Form, use these questions with these exact titles:
    - `Concert date` (Date question; required)
    - `Location` (Short answer; required)
    - `Description` (Paragraph; optional)
-   - `Ticket URL` (Short answer; optional, include the full `https://` address)
-2. In the Form's Responses tab, create or select its response spreadsheet. Give the client permission to submit the Form. Give them Sheet editor access only if they should also correct or delete existing entries.
-3. In the response spreadsheet, choose **File → Share → Publish to web**, select the responses worksheet, choose **Comma-separated values (.csv)**, and publish it. Copy the published CSV URL.
-4. Put the URL between the quotes in `window.CONCERTS_CSV_URL` in `js/concerts-config.js`, then publish the site. Keep the spreadsheet publicly viewable only via the published CSV; do not put private information in it.
+   - `Ticket Price` (Short answer; optional; for example `$25`, `$20–$35`, or `Free`)
+   Remove the `Ticket URL` question; tickets are booked or confirmed by email instead.
+2. Keep the existing response spreadsheet connected under the Form's Responses tab. Give the client permission to submit the Form. Give them Sheet editor access only if they should also correct or delete existing entries.
+3. In the response spreadsheet, choose **File → Share → Publish to web**, select the responses worksheet, choose **Comma-separated values (.csv)**, and publish it. Copy the published URL. A Google Sheets published URL ending in `pubhtml` is also accepted; the site converts that link to the CSV endpoint automatically.
+4. Put the published CSV URL between the quotes in `window.CONCERTS_CSV_URL` in `js/concerts-config.js`, then publish the site. Keep the spreadsheet publicly viewable only via the published CSV; do not put private information in it.
 5. Test a future-dated response and a past-dated response. The form can be shared directly with the client as their event-entry interface.
 
-The published Sheet is read-only from the website. Form submissions update its rows; deleting a row removes an event from both pages. If the CSV URL is blank, the pages show their no-upcoming-events message. If the Sheet is temporarily unreachable, the site displays an availability message.
+The published Sheet is read-only from the website. Form submissions update its rows; deleting a row removes an event from both pages. Ticket prices are shown on concert cards, and upcoming listings include an email link to book or confirm tickets at `Email@RamneekSingh.com`. If the CSV URL is blank, the pages show their no-upcoming-events message. If the Sheet is temporarily unreachable, the site displays an availability message.
 
 ## Custom domain later
 

@@ -713,6 +713,9 @@ p { margin: 0 0 1.1em; max-width: 62ch; }
 }
 .concert-card .ornament { margin: 1.2rem auto; }
 .concert-description { margin: 0 auto 1.5rem; color: var(--ink-soft); }
+.concert-price { margin: -0.75rem auto 1.5rem; color: var(--ink-soft); }
+.concert-booking-note { position: relative; margin: 0 auto; color: var(--ink-soft); }
+.concert-booking-note a { color: var(--red); text-decoration: underline; text-underline-offset: 0.18em; }
 .concert-card .btn { position: relative; }
 .concert-list { display: grid; gap: 1.5rem; }
 .concert-status { margin: 0 auto; color: var(--ink-soft); text-align: center; }

@@ -7,7 +7,7 @@
   if (!upcomingContainer && !homeDetail) return;
 
   var csvUrl = window.CONCERTS_CSV_URL;
-  var inquiriesUrl = 'mailto:Email@RamneekSingh.com';
+  var bookingEmail = 'Email@RamneekSingh.com';
 
   function parseCsv(text) {
     var rows = [];
@@ -42,13 +42,26 @@
       }
     }
 
+    if (quoted) throw new Error('The concert spreadsheet contains an unfinished quoted field.');
     row.push(cell);
     if (row.some(function (value) { return value.trim() !== ''; })) rows.push(row);
     if (!rows.length) return [];
 
     var headers = rows[0].map(function (header) {
-      return header.replace(/^\uFEFF/, '').trim().toLowerCase();
+      var normalized = header.replace(/^\uFEFF/, '').trim().toLowerCase();
+      if (normalized.indexOf('concert date') === 0 || normalized === 'date') return 'concert date';
+      if (normalized.indexOf('location') === 0 || normalized === 'city / venue' ||
+          normalized === 'venue' || normalized === 'city') return 'location';
+      if (normalized.indexOf('description') === 0) return 'description';
+      if (normalized.indexOf('ticket price') === 0 || normalized.indexOf('ticket amount') === 0 ||
+          normalized === 'price') return 'ticket price';
+      return normalized;
     });
+    var hasDate = headers.indexOf('concert date') !== -1;
+    var hasLocation = headers.indexOf('location') !== -1;
+    if (!hasDate || !hasLocation) {
+      throw new Error('The concert spreadsheet needs Concert date and Location columns.');
+    }
 
     return rows.slice(1).map(function (values) {
       var record = {};
@@ -62,13 +75,24 @@
   function parseDate(value) {
     var trimmed = value.trim();
     var iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    var us = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    var slashDate = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     var date;
 
     if (iso) {
       date = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
-    } else if (us) {
-      date = new Date(Number(us[3]), Number(us[1]) - 1, Number(us[2]));
+      if (date.getFullYear() !== Number(iso[1]) ||
+          date.getMonth() !== Number(iso[2]) - 1 ||
+          date.getDate() !== Number(iso[3])) return null;
+    } else if (slashDate) {
+      var first = Number(slashDate[1]);
+      var second = Number(slashDate[2]);
+      var day = first > 12 || second <= 12 ? first : second;
+      var month = first > 12 || second <= 12 ? second : first;
+      var year = Number(slashDate[3]);
+      date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year ||
+          date.getMonth() !== month - 1 ||
+          date.getDate() !== day) return null;
     } else {
       date = new Date(trimmed);
       if (!Number.isNaN(date.getTime())) {
@@ -88,14 +112,13 @@
     return '';
   }
 
-  function safeLink(value) {
-    if (!value) return '';
-    try {
-      var url = new URL(value, window.location.href);
-      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
-    } catch (error) {
-      return '';
+  function getCsvUrl(value) {
+    var url = new URL(value, window.location.href);
+    if (url.hostname === 'docs.google.com' && /\/pubhtml$/.test(url.pathname)) {
+      url.pathname = url.pathname.replace(/\/pubhtml$/, '/pub');
+      url.searchParams.set('output', 'csv');
     }
+    return url.href;
   }
 
   function normalizeConcerts(records) {
@@ -103,13 +126,15 @@
       var rawDate = firstValue(record, ['concert date', 'date']);
       var date = parseDate(rawDate);
       var location = firstValue(record, ['location', 'city / venue', 'venue', 'city']);
-      if (!date || !location) return null;
+      if (!date || !location) {
+        throw new Error('A concert row is missing a valid date or location.');
+      }
 
       return {
         date: date,
         location: location,
         description: firstValue(record, ['description', 'event description']),
-        ticketUrl: safeLink(firstValue(record, ['ticket url', 'ticket / details url', 'event url', 'link']))
+        ticketPrice: firstValue(record, ['ticket price', 'ticket amount', 'price'])
       };
     }).filter(Boolean);
   }
@@ -149,16 +174,26 @@
       card.appendChild(description);
     }
 
+    if (concert.ticketPrice) {
+      var price = document.createElement('p');
+      price.className = 'concert-price';
+      var priceLabel = document.createElement('strong');
+      priceLabel.textContent = 'Ticket price: ';
+      price.appendChild(priceLabel);
+      price.appendChild(document.createTextNode(concert.ticketPrice));
+      card.appendChild(price);
+    }
+
     if (isUpcoming) {
-      var link = document.createElement('a');
-      link.className = 'btn btn-outline';
-      link.href = concert.ticketUrl || inquiriesUrl;
-      link.textContent = concert.ticketUrl ? 'Event details and tickets' : 'Performance inquiries';
-      if (concert.ticketUrl) {
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-      }
-      card.appendChild(link);
+      var bookingNote = document.createElement('p');
+      bookingNote.className = 'concert-booking-note';
+      bookingNote.appendChild(document.createTextNode('To book or confirm your tickets, please email '));
+      var emailLink = document.createElement('a');
+      emailLink.href = 'mailto:' + bookingEmail;
+      emailLink.textContent = bookingEmail;
+      bookingNote.appendChild(emailLink);
+      bookingNote.appendChild(document.createTextNode('.'));
+      card.appendChild(bookingNote);
     }
     return card;
   }
@@ -228,7 +263,7 @@
     return;
   }
 
-  fetch(csvUrl, { cache: 'no-store' })
+  fetch(getCsvUrl(csvUrl), { cache: 'no-store' })
     .then(function (response) {
       if (!response.ok) throw new Error('Concert spreadsheet request failed: ' + response.status);
       return response.text();
